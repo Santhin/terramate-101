@@ -33,7 +33,7 @@ jobs:
       - name: Install OpenTofu
         uses: opentofu/setup-opentofu@v1
         with:
-          tofu_wrapper: false
+          tofu_wrapper: true
           version: "1.8.3"
 
       # Check for changed stacks
@@ -46,15 +46,15 @@ jobs:
 
       - name: Run Terraform init on changed stacks
         if: steps.list.outputs.stdout
-        run: terramate run --changed -- terraform init
+        run: terramate run --changed -- tofu init
 
       - name: Create Terraform plan on changed stacks
         if: steps.list.outputs.stdout
-        run: terramate run --changed -- terraform plan -lock-timeout=5m -out out.tfplan
+        run: terramate run --changed -- tofu plan -lock-timeout=5m -out out.tfplan
 
       - name: Apply planned changes on changed stacks
         if: steps.list.outputs.stdout
-        run: terramate run --changed --sync-deployment --terraform-plan-file=out.tfplan -- terraform apply -input=false -auto-approve -lock-timeout=5m out.tfplan
+        run: terramate run --changed --sync-deployment --tofu-plan-file=out.tfplan -- tofu apply -input=false -auto-approve -lock-timeout=5m out.tfplan
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
@@ -62,6 +62,6 @@ jobs:
 
       - name: Run drift detection
         if: steps.list.outputs.stdout && ! cancelled() && steps.apply.outcome != 'skipped'
-        run: terramate run --changed --sync-drift-status --terraform-plan-file=drift.tfplan -- terraform plan -out drift.tfplan -detailed-exitcode
+        run: terramate run --changed --sync-drift-status --tofu-plan-file=drift.tfplan -- tofu plan -out drift.tfplan -detailed-exitcode
         env:
           GITHUB_TOKEN: ${{ github.token }}
